@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Green+Photo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="style.css">
+  <script src="script.js"></script>
+</head>
+
+<body class="text-white min-h-screen flex flex-col justify-between estrelas">
+
+  <div class="lua"></div>
+
+  <header class="bg-green-600 text-white p-4 shadow-md text-center text-2xl font-bold">
+    Green+Photo
+  </header>
+
+  <main class="flex flex-col items-center p-4">
+    <div class="max-w-md w-full bg-white text-gray-900 rounded-2xl shadow-lg p-6 relative">
+
+      <!-- Loading -->
+      <div id="loading" class="absolute inset-0 bg-white bg-opacity-80 flex items-center justify-center z-10 hidden rounded-2xl">
+        <div class="flex flex-col items-center">
+          <svg class="animate-spin h-8 w-8 text-green-600 mb-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"></path>
+          </svg>
+          <p class="text-green-600 font-medium">Classificando imagem...</p>
+        </div>
+      </div>
+
+      <h1 class="text-2xl font-semibold text-center mb-2">Classifique seu lixo com uma foto!</h1>
+      <p class="text-center text-gray-600 mb-6 text-sm">Envie uma imagem e descubra como descartá-la corretamente.</p>
+
+      <label for="imageUpload" class="mb-4 w-full text-sm cursor-pointer inline-flex items-center gap-2 bg-gray-100 border border-gray-300 rounded-xl px-4 py-2 hover:bg-gray-200 justify-center">
+        📷 Escolher imagem
+        <input type="file" accept="image/*" class="hidden" id="imageUpload" />
+      </label>
+
+      <img id="preview" class="w-full h-64 object-cover rounded-xl shadow mb-4 hidden" alt="Pré-visualização" />
+      <button id="classifyBtn" class="w-full bg-green-600 text-white py-2 rounded-xl hover:bg-green-700 transition font-semibold">
+        Classificar
+      </button>
+
+      <div id="result" class="mt-6 text-center hidden transition-all duration-300 ease-in-out">
+        <p class="text-xl">Esse item é: <span id="resultLabel" class="text-green-600 font-bold"></span></p>
+        <div id="lixeiraImg" class="mt-3"></div>
+      </div>
+
+      <!-- Botão de curiosidades -->
+      <div id="curiosidadeBtn" class="mt-4 hidden text-center z-40 relative">
+        <button id="btnCuriosidade" class="bg-yellow-400 hover:bg-yellow-500 text-white font-medium py-2 px-4 rounded-xl flex items-center gap-2 mx-auto transition-all duration-200 shadow hover:scale-105">
+          <i data-lucide="info" class="w-4 h-4"></i>
+          Curiosidade
+        </button>
+      </div>
+
+      <!-- Modal de curiosidade -->
+      <div id="curiosidadeModal" class="fixed inset-0 bg-black bg-opacity-40 hidden justify-center items-center z-50 transition duration-300">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm p-6 text-center relative transform scale-100 transition duration-300 text-gray-800">
+          <button class="absolute top-2 right-2 text-gray-500 hover:text-gray-800" id="btnFecharModal">&times;</button>
+          <h2 class="text-lg font-bold mb-2">Curiosidade sobre <span id="curiosidadeTitulo"></span></h2>
+          <img id="curiosidadeImagem" class="w-32 h-32 mx-auto mb-3 rounded-lg object-cover shadow" />
+          <p id="curiosidadeTexto" class="text-sm text-gray-700"></p>
+          <p class="mt-4 text-green-600 font-semibold">Continue separando corretamente. O planeta agradece 🌱</p>
+          <p class="text-sm text-gray-500 mt-2">Juntos somos mais fortes ♻️✨</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="text-center text-sm text-white bg-green-600 p-4">
+    © 2025 Green+Photo. Projeto educacional.
+  </footer>
+
+  <!-- SCRIPT inline mantido -->
+  <script>
+    const imageUpload = document.getElementById('imageUpload');
+    const preview = document.getElementById('preview');
+    const classifyBtn = document.getElementById('classifyBtn');
+    const result = document.getElementById('result');
+    const resultLabel = document.getElementById('resultLabel');
+    const curiosidadeBtn = document.getElementById('curiosidadeBtn');
+    const curiosidadeTitulo = document.getElementById('curiosidadeTitulo');
+    const curiosidadeTexto = document.getElementById('curiosidadeTexto');
+    const curiosidadeImagem = document.getElementById('curiosidadeImagem');
+    const curiosidadeModal = document.getElementById('curiosidadeModal');
+    const lixeiraImg = document.getElementById('lixeiraImg');
+    const loading = document.getElementById('loading');
+    const btnCuriosidade = document.getElementById('btnCuriosidade');
+    const btnFecharModal = document.getElementById('btnFecharModal');
+
+    let selectedFile = null;
+    let dadosAtuais = {};
+
+    imageUpload.addEventListener('change', (e) => {
+      selectedFile = e.target.files[0];
+      if (selectedFile) {
+        const reader = new FileReader();
+        reader.onload = function(event) {
+          preview.src = event.target.result;
+          preview.classList.remove('hidden');
+          result.classList.add('hidden');
+          curiosidadeBtn.classList.add('hidden');
+          lixeiraImg.innerHTML = '';
+        };
+        reader.readAsDataURL(selectedFile);
+      }
+    });
+
+    classifyBtn.addEventListener('click', async () => {
+      if (!selectedFile) {
+        alert('Envie uma imagem para classificar.');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('image', selectedFile);
+      loading.classList.remove('hidden');
+
+      try {
+     const response = await fetch('http://localhost:3000/classify', {
+  method: 'POST',
+  body: formData,
+});
+
+        const data = await response.json();
+        loading.classList.add('hidden');
+
+        dadosAtuais = data;
+
+        resultLabel.textContent = data.class;
+        result.classList.remove('hidden');
+        curiosidadeBtn.classList.remove('hidden');
+        lixeiraImg.innerHTML = `<img src="${data.lixeira}" alt="Lixeira" class="w-24 mx-auto mt-2">`;
+
+      } catch (error) {
+        console.error('Erro ao classificar a imagem:', error);
+        alert('Ocorreu um erro ao processar a imagem.');
+        loading.classList.add('hidden');
+      }
+    });
+
+    btnCuriosidade.addEventListener('click', () => {
+      if (!dadosAtuais || !dadosAtuais.class) {
+        alert("Classifique um item primeiro.");
+        return;
+      }
+
+      curiosidadeTitulo.textContent = dadosAtuais.class || 'item';
+      curiosidadeTexto.textContent = dadosAtuais.curiosidade || 'Sem curiosidade disponível.';
+      curiosidadeImagem.src = dadosAtuais.imagemCuriosidade || '';
+      curiosidadeModal.classList.remove('hidden');
+    });
+
+    btnFecharModal.addEventListener('click', () => {
+      curiosidadeModal.classList.add('hidden');
+    });
+  </script>
+</body>
+</html>

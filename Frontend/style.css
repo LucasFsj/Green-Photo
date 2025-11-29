@@ -1,0 +1,23 @@
+body
+     {
+      background-color: green; /* Noite escura */
+      background-repeat: repeat-x;
+      background-position: top left, bottom right;
+
+    }
+
+    @keyframes moverNuvens {
+      from {
+        background-position: 0px 50px, 100% 300px;
+      }
+      to {
+        background-position: 100% 50px, 0% 300px;
+      }
+    }
+
+
+    @keyframes brilhoEstrelas {
+      from { background-position: 0 0; }
+      to { background-position: 1000px 500px; }
+    };
+
